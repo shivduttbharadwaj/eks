@@ -1,0 +1,3521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced AWS EKS Workshop - Production Guide</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .presentation-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .slide {
+            min-height: 90vh;
+            padding: 40px 60px;
+            display: none;
+            position: relative;
+            overflow-y: auto;
+        }
+        
+        .slide.active {
+            display: block;
+        }
+        
+        .slide h1 {
+            color: #2c3e50;
+            font-size: 3em;
+            margin-bottom: 30px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .slide h2 {
+            color: #34495e;
+            font-size: 2.2em;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .slide h3 {
+            color: #2980b9;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        
+        .slide p, .slide li {
+            font-size: 1.1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .slide ul {
+            padding-left: 30px;
+        }
+        
+        .slide li {
+            margin-bottom: 10px;
+        }
+        
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            margin: 20px 0;
+            overflow-x: auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .architecture-diagram {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 2px solid #3498db;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+            font-family: monospace;
+            font-size: 0.9em;
+            line-height: 1.8;
+        }
+        
+        .cost-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .cost-table th, .cost-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .cost-table th {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .cost-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+        
+        .nav-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            margin: 0 5px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(52, 73, 94, 0.8);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+        }
+        
+        .highlight-box {
+            background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
+            border-left: 5px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            border-left: 5px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .network-flow {
+            background: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+            font-family: monospace;
+            font-size: 1em;
+            line-height: 2;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .metric-card h4 {
+            margin-top: 0;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <div class="slide-counter">
+            <span id="current-slide">1</span> / <span id="total-slides">15</span>
+        </div>
+
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <h1>🚀 Advanced AWS EKS Workshop</h1>
+            <h2 style="text-align: center; color: #3498db;">Production-Grade Kubernetes on AWS</h2>
+            <div style="text-align: center; margin-top: 50px;">
+                <h3>Complete Guide to:</h3>
+                <ul style="font-size: 1.3em; text-align: left; display: inline-block;">
+                    <li>Production EKS Architecture & Multi-AZ HA Setup</li>
+                    <li>Advanced Networking & Pod Communication</li>
+                    <li>Security Best Practices & Implementation</li>
+                    <li>Monitoring with Datadog Integration</li>
+                    <li>Cost Optimization (EC2 vs Fargate)</li>
+                    <li>Hands-on Code Examples & Best Practices</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 2: Production EKS Architecture -->
+        <div class="slide">
+            <h2>🏗️ Production-Grade EKS Architecture</h2>
+            <div class="architecture-diagram">
+                <h3>Multi-AZ High Availability Setup</h3>
+                <pre>
+┌─────────────────────────────────────────────────────────────────┐
+│                      AWS Region (us-east-1)                    │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                    VPC (10.0.0.0/16)                   │   │
+│  │                                                         │   │
+│  │  AZ-1a          AZ-1b          AZ-1c                   │   │
+│  │ ┌─────────┐    ┌─────────┐    ┌─────────┐              │   │
+│  │ │Public   │    │Public   │    │Public   │              │   │
+│  │ │Subnet   │    │Subnet   │    │Subnet   │              │   │
+│  │ │10.0.1.0 │    │10.0.2.0 │    │10.0.3.0 │              │   │
+│  │ │   /24   │    │   /24   │    │   /24   │              │   │
+│  │ │         │    │         │    │         │              │   │
+│  │ │ ┌─────┐ │    │ ┌─────┐ │    │ ┌─────┐ │              │   │
+│  │ │ │ ALB │ │    │ │ ALB │ │    │ │ ALB │ │              │   │
+│  │ │ └─────┘ │    │ └─────┘ │    │ └─────┘ │              │   │
+│  │ └─────────┘    └─────────┘    └─────────┘              │   │
+│  │                                                         │   │
+│  │ ┌─────────┐    ┌─────────┐    ┌─────────┐              │   │
+│  │ │Private  │    │Private  │    │Private  │              │   │
+│  │ │Subnet   │    │Subnet   │    │Subnet   │              │   │
+│  │ │10.0.11.0│    │10.0.12.0│    │10.0.13.0│              │   │
+│  │ │   /24   │    │   /24   │    │   /24   │              │   │
+│  │ │         │    │         │    │         │              │   │
+│  │ │┌───────┐│    │┌───────┐│    │┌───────┐│              │   │
+│  │ ││Worker ││    ││Worker ││    ││Worker ││              │   │
+│  │ ││Nodes  ││    ││Nodes  ││    ││Nodes  ││              │   │
+│  │ ││& Pods ││    ││& Pods ││    ││& Pods ││              │   │
+│  │ │└───────┘│    │└───────┘│    │└───────┘│              │   │
+│  │ └─────────┘    └─────────┘    └─────────┘              │   │
+│  │                                                         │   │
+│  │ ┌─────────┐    ┌─────────┐    ┌─────────┐              │   │
+│  │ │Database │    │Database │    │Database │              │   │
+│  │ │Subnet   │    │Subnet   │    │Subnet   │              │   │
+│  │ │10.0.21.0│    │10.0.22.0│    │10.0.23.0│              │   │
+│  │ │   /24   │    │   /24   │    │   /24   │              │   │
+│  │ │  ┌───┐  │    │  ┌───┐  │    │  ┌───┐  │              │   │
+│  │ │  │RDS│  │    │  │RDS│  │    │  │RDS│  │              │   │
+│  │ │  └───┘  │    │  └───┘  │    │  └───┘  │              │   │
+│  │ └─────────┘    └─────────┘    └─────────┘              │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                EKS Control Plane                       │   │
+│  │              (Managed by AWS)                          │   │
+│  │     ┌─────┐    ┌─────┐    ┌─────┐                      │   │
+│  │     │ API │    │ETCD │    │Sched│                      │   │
+│  │     │ Srv │    │     │    │uler │                      │   │
+│  │     └─────┘    └─────┘    └─────┘                      │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+                </pre>
+            </div>
+            <div class="highlight-box">
+                <h3>Key Architecture Components:</h3>
+                <ul>
+                    <li><strong>Control Plane:</strong> Fully managed by AWS across multiple AZs</li>
+                    <li><strong>Worker Nodes:</strong> Distributed across 3 AZs for HA</li>
+                    <li><strong>Load Balancer:</strong> Application Load Balancer in public subnets</li>
+                    <li><strong>Database:</strong> RDS with Multi-AZ deployment</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 3: Network Traffic Flow -->
+        <div class="slide">
+            <h2>🌐 Network Traffic Flow: Internet to Pods</h2>
+            <div class="network-flow">
+                <h3>Request Flow Architecture</h3>
+                <pre>
+Internet Request → Route 53 → CloudFront (Optional) → ALB
+    ↓
+ALB Target Groups → EKS Service (ClusterIP/NodePort)
+    ↓
+kube-proxy (iptables rules) → Pod (via CNI Plugin)
+    ↓
+Container Application
+                </pre>
+            </div>
+            
+            <h3>Detailed Traffic Flow Steps:</h3>
+            <div class="code-block">
+              <code class="language-text"> 
+                <pre>
+1. External Request Processing:
+   Internet → Route 53 DNS Resolution → CloudFront CDN (optional)
+   → Application Load Balancer (ALB) in Public Subnets
+
+2. ALB to Kubernetes Service:
+   ALB → Target Groups → Worker Nodes (NodePort/Instance targets)
+   → kube-proxy → Service Discovery → Pod Selection
+
+3. Pod-to-Pod Communication:
+   Source Pod → CNI Plugin (AWS VPC CNI) → VPC Routing
+   → Destination Pod's Network Interface
+
+4. Pod-to-AWS Services:
+   Pod → VPC Endpoints (optional) → AWS Services (S3, RDS, etc.)
+   OR Pod → Internet Gateway → AWS Services
+                </pre>
+              </code>
+            </div>
+
+            <div class="highlight-box">
+                <h3>Network Components:</h3>
+                <ul>
+                    <li><strong>AWS VPC CNI:</strong> Native VPC networking for pods</li>
+                    <li><strong>Service Mesh:</strong> Istio/Linkerd for advanced traffic management</li>
+                    <li><strong>Network Policies:</strong> Kubernetes native or Calico for security</li>
+                    <li><strong>VPC Endpoints:</strong> Private connectivity to AWS services</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 4: Pod Communication Patterns -->
+        <div class="slide">
+            <h2>🔗 Pod-to-Pod Communication</h2>
+            
+            <div class="architecture-diagram">
+                <h3>Pod Networking with AWS VPC CNI</h3>
+                <pre>
+┌─────────────────────────────────────────────────────────────┐
+│                    Worker Node (EC2)                       │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                  kubelet                            │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │              Pod Network                    │   │   │
+│  │  │                                             │   │   │
+│  │  │  ┌─────────┐    ┌─────────┐    ┌─────────┐ │   │   │
+│  │  │  │  Pod A  │    │  Pod B  │    │  Pod C  │ │   │   │
+│  │  │  │10.0.1.10│    │10.0.1.11│    │10.0.1.12│ │   │   │
+│  │  │  │         │    │         │    │         │ │   │   │
+│  │  │  │ veth0   │    │ veth0   │    │ veth0   │ │   │   │
+│  │  │  └─────────┘    └─────────┘    └─────────┘ │   │   │
+│  │  │       │             │             │        │   │   │
+│  │  └───────┼─────────────┼─────────────┼────────┘   │   │
+│  │          │             │             │            │   │
+│  │      ┌───┴─────────────┴─────────────┴───┐        │   │
+│  │      │          Bridge cni0              │        │   │
+│  │      └─────────────────┬─────────────────┘        │   │
+│  │                        │                          │   │
+│  │      ┌─────────────────┴─────────────────┐        │   │
+│  │      │         Primary ENI               │        │   │
+│  │      │        (10.0.1.5)                │        │   │
+│  │      └─────────────────┬─────────────────┘        │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                           │                                  │
+│  ┌────────────────────────┴────────────────────────────┐    │
+│  │                 VPC Subnet                         │    │
+│  │                (10.0.1.0/24)                       │    │
+│  └─────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────┘
+                </pre>
+            </div>
+
+            <h3>Pod Communication Mechanisms:</h3>
+            <div class="code-block">
+              <code class="language-text"> 
+                <pre>
+# 1. Same Node Communication (Fastest)
+Pod A (10.0.1.10) → Bridge cni0 → Pod B (10.0.1.11)
+
+# 2. Different Node Communication
+Pod A → ENI → VPC Route Table → Target ENI → Pod C
+
+# 3. Service-based Communication
+Pod A → Service ClusterIP → kube-proxy → Target Pod(s)
+
+# 4. DNS Resolution
+Pod A → CoreDNS Service → Service Discovery → Target Pod
+                </pre>
+              </code>
+            </div>
+
+            <div class="highlight-box">
+                <h3>AWS VPC CNI Benefits:</h3>
+                <ul>
+                    <li><strong>Native VPC IPs:</strong> Pods get actual VPC IP addresses</li>
+                    <li><strong>High Performance:</strong> No overlay network overhead</li>
+                    <li><strong>Security Groups:</strong> Native AWS security group support</li>
+                    <li><strong>Network Policies:</strong> Fine-grained traffic control</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 5: EKS Cluster Creation with eksctl -->
+        <div class="slide">
+            <h2>⚙️ Creating Production EKS Cluster with eksctl</h2>
+            
+            <h3>1. Prerequisites & Installation:</h3>
+            <div class="code-block">
+              <code class="language-bash"> 
+                <pre>
+# Install eksctl
+curl --silent --location "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C /tmp
+sudo mv /tmp/eksctl /usr/local/bin
+
+# Install kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Install AWS CLI v2
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Production Cluster Configuration:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Create cluster.yaml for production setup
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: production-eks-cluster
+  region: us-east-1
+  version: "1.31"
+
+# VPC Configuration
+vpc:
+  cidr: "10.0.0.0/16"
+  nat:
+    gateway: HighlyAvailable
+  clusterEndpoints:
+    privateAccess: true
+    publicAccess: true
+    publicAccessCIDRs: ["0.0.0.0/0"]
+
+# IAM Configuration
+iam:
+  withOIDC: true
+  serviceAccounts:
+  - metadata:
+      name: aws-load-balancer-controller
+      namespace: kube-system
+    wellKnownPolicies:
+      awsLoadBalancerController: true
+  - metadata:
+      name: cluster-autoscaler
+      namespace: kube-system
+    wellKnownPolicies:
+      autoScaler: true
+  - metadata:
+      name: ebs-csi-controller-sa
+      namespace: kube-system
+    wellKnownPolicies:
+      ebsCSIController: true
+
+# Managed Node Groups
+managedNodeGroups:
+- name: production-workers
+  instanceType: m5.xlarge
+  minSize: 2
+  maxSize: 10
+  desiredCapacity: 3
+  availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
+  
+  # EBS Volume Configuration
+  volumeSize: 100
+  volumeType: gp3
+  volumeEncrypted: true
+  
+  # Security Configuration
+  privateNetworking: true
+  
+  # Labels and Tags
+  labels:
+    node-type: "production-worker"
+    environment: "production"
+  
+  tags:
+    Environment: production
+    ManagedBy: eksctl
+    
+  # Instance Metadata Service
+  instanceMetadataServicePolicy: required
+
+# Fargate Profiles for serverless workloads
+fargateProfiles:
+- name: fp-default
+  selectors:
+  - namespace: default
+    labels:
+      compute-type: fargate
+- name: fp-kube-system
+  selectors:
+  - namespace: kube-system
+    labels:
+      compute-type: fargate
+
+# Add-ons
+addons:
+- name: vpc-cni
+  version: latest
+  configurationValues: |-
+    env:
+      ENABLE_PREFIX_DELEGATION: "true"
+      ENABLE_POD_ENI: "true"
+- name: coredns
+  version: latest
+- name: kube-proxy
+  version: latest
+- name: aws-ebs-csi-driver
+  version: latest
+  serviceAccountRoleARN: arn:aws:iam::ACCOUNT_ID:role/AmazonEKS_EBS_CSI_DriverRole
+
+# Logging
+logging:
+  enable:
+    - api
+    - audit
+    - authenticator
+    - controllerManager
+    - scheduler
+  logRetentionInDays: 7
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 6: Cluster Creation Commands -->
+        <div class="slide">
+            <h2>🚀 EKS Cluster Deployment Commands</h2>
+            
+            <h3>3. Create the Cluster:</h3>
+            <div class="code-block">
+              <code class="language-bash"> 
+                <pre>
+# Create cluster using config file
+eksctl create cluster -f cluster.yaml
+
+# Alternative: Create cluster with CLI parameters
+eksctl create cluster \
+  --name production-eks-cluster \
+  --region us-east-1 \
+  --version 1.31 \
+  --nodegroup-name production-workers \
+  --node-type m5.xlarge \
+  --nodes 3 \
+  --nodes-min 2 \
+  --nodes-max 10 \
+  --managed \
+  --enable-ssm \
+  --with-oidc \
+  --ssh-access \
+  --ssh-public-key your-key-name
+                </pre>
+              </code>
+            </div>
+
+            <h3>4. Post-Deployment Configuration:</h3>
+            <div class="code-block">
+              <code class="language-bash"> 
+                <pre>
+# Update kubeconfig
+aws eks update-kubeconfig --region us-east-1 --name production-eks-cluster
+
+# Verify cluster connection
+kubectl get nodes -o wide
+
+# Install AWS Load Balancer Controller
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+  -n kube-system \
+  --set clusterName=production-eks-cluster \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller
+
+# Install Cluster Autoscaler
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/autoscaler/master/cluster-autoscaler/cloudprovider/aws/examples/cluster-autoscaler-autodiscover.yaml
+
+kubectl -n kube-system annotate deployment.apps/cluster-autoscaler cluster-autoscaler.kubernetes.io/safe-to-evict="false"
+
+kubectl -n kube-system edit deployment.apps/cluster-autoscaler
+# Add: --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/production-eks-cluster
+                </pre>
+              </code>
+            </div>
+
+            <h3>5. Verify Installation:</h3>
+            <div class="code-block">
+              <code class="language-bash"> 
+                <pre>
+# Check eksctl version
+eksctl version
+              
+# Check cluster status
+eksctl get cluster --name production-eks-cluster --region us-east-1
+
+# Check node groups
+eksctl get nodegroup --cluster production-eks-cluster --region us-east-1
+
+# Check add-ons
+eksctl get addon --cluster production-eks-cluster --region us-east-1
+
+# Verify AWS Load Balancer Controller
+kubectl get deployment -n kube-system aws-load-balancer-controller
+
+# Check cluster info
+kubectl cluster-info
+# Check nodes
+kubectl get nodes -o wide
+# Check namespaces
+kubectl get namespaces
+# Check pods in kube-system
+kubectl get pods -n kube-system -o wide
+# Check services
+kubectl get services -n kube-system 
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 7: Sample Application Deployment -->
+        <div class="slide">
+            <h2>📱 Sample Application Deployment</h2>
+            
+            <h3>1. Sample Microservices Application:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Create namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sample-app
+  labels:
+    name: sample-app
+---
+# Deployment for frontend service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: sample-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: nginx:1.21
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+# Service for frontend
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: sample-app
+spec:
+  selector:
+    app: frontend
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+# Backend API deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-api
+  namespace: sample-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend-api
+  template:
+    metadata:
+      labels:
+        app: backend-api
+    spec:
+      containers:
+      - name: backend-api
+        image: httpd:2.4
+        ports:
+        - containerPort: 80
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: database-url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+---
+# Service for backend
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: sample-app
+spec:
+  selector:
+    app: backend-api
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  type: ClusterIP
+---
+# Application Load Balancer Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sample-app-ingress
+  namespace: sample-app
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:ACCOUNT_ID:certificate/CERTIFICATE_ID
+spec:
+  rules:
+  - host: myapp.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+      - path: /api
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-service
+            port:
+              number: 80
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Database Secret Configuration:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Create database credentials secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: db-credentials
+  namespace: sample-app
+type: Opaque
+data:
+  database-url: cG9zdGdyZXNxbDovL3VzZXI6cGFzc3dvcmRAcmRzLWVuZHBvaW50OjU0MzIvZGJuYW1l
+  username: dXNlcm5hbWU=
+  password: cGFzc3dvcmQ=
+
+# Apply the manifests
+kubectl apply -f namespace.yaml
+kubectl apply -f secrets.yaml
+kubectl apply -f deployments.yaml
+kubectl apply -f services.yaml
+kubectl apply -f ingress.yaml
+                </pre>
+              </code>
+            </div>
+
+            <h3>3. Horizontal Pod Autoscaler:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# HPA for frontend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: sample-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+# HPA for backend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  namespace: sample-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend-api
+  minReplicas: 2
+  maxReplicas: 15
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 85
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 8: Security Best Practices -->
+        <div class="slide">
+            <h2>🔐 EKS Security Best Practices</h2>
+            
+            <h3>1. Identity and Access Management:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Create IAM Role for EKS Service Account
+apiVersion: iam.amazonaws.com/v1
+kind: Role
+metadata:
+  name: S3AccessRole
+  namespace: sample-app 
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/S3AccessRole
+rules:
+- apiGroups: [""]
+  resources: ["secrets", "configmaps"]  
+  verbs: ["get", "list", "create", "update", "delete"]
+- apiGroups: ["s3.amazonaws.com"]
+  resources: ["buckets"]
+  verbs: ["get", "list", "create", "update", "delete"]
+
+# Create Kubernetes Service Account
+apiVersion: v1 
+kind: ServiceAccount
+metadata:
+  name: s3-access-sa
+  namespace: sample-app
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/S3AccessRole
+---
+# Create RBAC for administrators
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: admin-role
+rules:
+- apiGroups: [""] 
+  resources: ["*"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["apps", "extensions", "networking.k8s.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["rbac.authorization.k8s.io"]
+  resources: ["*"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-binding
+subjects:
+- kind: User
+  name: admin-user
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: admin-role
+  apiGroup: rbac.authorization.k8s.io 
+
+
+# Create RBAC for developers
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: developer-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "secrets"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["extensions", "networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: developer-binding
+subjects:
+- kind: User
+  name: developer-user
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: developer-role
+  apiGroup: rbac.authorization.k8s.io
+
+# AWS IAM Role for Service Account (IRSA)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: s3-access-sa
+  namespace: sample-app
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::ACCOUNT_ID:role/S3AccessRole
+                </pre>
+              </code> 
+            </div>
+
+            <h3>2. Network Security Policies:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Network Policy - Deny all ingress by default
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: sample-app
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+# Allow frontend to backend communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-backend
+  namespace: sample-app
+spec:
+  podSelector:
+    matchLabels:
+      app: backend-api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    ports:
+    - protocol: TCP
+      port: 80
+---
+# Allow ingress controller to frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-frontend
+  namespace: sample-app
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 80
+                </pre>
+              </code>
+            </div>
+
+            <h3>3. Pod Security Standards:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Pod Security Policy (using Pod Security Standards)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: secure-app
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+# Security Context in Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure-app
+  namespace: secure-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: secure-app
+  template:
+    metadata:
+      labels:
+        app: secure-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: app
+        image: nginx:1.21
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: var-cache
+          mountPath: /var/cache/nginx
+        - name: var-run
+          mountPath: /var/run
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: var-cache
+        emptyDir: {}
+      - name: var-run
+        emptyDir: {}
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 9: Security Best Practices Continued -->
+        <div class="slide">
+            <h2>🛡️ Advanced Security Configuration</h2>
+
+            <h3>4. Secrets Management with External Secrets Operator:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Install External Secrets Operator
+helm repo add external-secrets https://charts.external-secrets.io
+helm install external-secrets external-secrets/external-secrets -n external-secrets-system --create-namespace
+
+# SecretStore for AWS Secrets Manager
+apiVersion: external-secrets.io/v1beta1
+kind: SecretStore
+metadata:
+  name: aws-secrets-manager
+  namespace: sample-app
+spec:
+  provider:
+    aws:
+      service: SecretsManager
+      region: us-east-1
+      auth:
+        jwt:
+          serviceAccountRef:
+            name: external-secrets-sa
+---
+# ExternalSecret to pull from AWS Secrets Manager
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: database-credentials
+  namespace: sample-app
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: SecretStore
+  target:
+    name: db-credentials
+    creationPolicy: Owner
+  data:
+  - secretKey: username
+    remoteRef:
+      key: prod/db/credentials
+      property: username
+  - secretKey: password
+    remoteRef:
+      key: prod/db/credentials
+      property: password
+                </pre>
+              </code>
+            </div>
+
+            <h3>5. Image Scanning and Admission Controllers:</h3>
+            <div class="code-block">
+              <code class="language-bash"> 
+                <pre>
+# Enable ECR image scanning
+aws ecr put-image-scanning-configuration \
+  --repository-name my-repo \
+  --image-scanning-configuration scanOnPush=true  
+# Install OPA Gatekeeper for policy enforcement
+helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+helm install gatekeeper gatekeeper/gatekeeper \
+  --namespace gatekeeper-system \
+  --create-namespace \
+  --set enableCRDValidation=true \
+  --set auditInterval=24h \
+  --set webhookTimeoutSeconds=10
+# Install Kyverno for policy management
+helm repo add kyverno https://kyverno.github.io/kyverno
+helm install kyverno kyverno/kyverno \
+  --namespace kyverno-system \
+  --create-namespace \
+  --set admissionController.enabled=true \
+  --set metrics.enabled=true \
+  --set webhookTimeoutSeconds=10
+
+# Install Falco for runtime security
+helm repo add falcosecurity https://falcosecurity.github.io/charts
+helm install falco falcosecurity/falco \
+  --namespace falco-system \
+  --create-namespace \
+  --set falco.grpc.enabled=true \
+  --set falco.grpcOutput.enabled=true
+
+# OPA Gatekeeper for policy enforcement
+kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.14/deploy/gatekeeper.yaml
+
+                </pre>
+              </code>
+            </div>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+
+# Constraint Template for required labels
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredlabels
+        violation[{"msg": msg}] {
+          required := input.parameters.labels
+          provided := input.review.object.metadata.labels
+          missing := required[_]
+          not provided[missing]
+          msg := sprintf("Missing required label: %v", [missing])
+        }
+---
+# Constraint requiring specific labels
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: must-have-environment
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+  parameters:
+    labels: ["environment", "team", "version"]
+                </pre>
+              </code>
+            </div>
+
+            <h3>6. Cluster Hardening Checklist:</h3>
+            <div class="warning-box">
+                <h4>Essential Security Measures:</h4>
+                <ul>
+                    <li><strong>API Server:</strong> Restrict public access, enable audit logging</li>
+                    <li><strong>Node Security:</strong> Use AWS Systems Manager Session Manager instead of SSH</li>
+                    <li><strong>Container Images:</strong> Use ECR with image scanning enabled</li>
+                    <li><strong>Network:</strong> Implement VPC security groups and NACLs</li>
+                    <li><strong>Encryption:</strong> Enable encryption at rest and in transit</li>
+                    <li><strong>Monitoring:</strong> CloudTrail, GuardDuty, and Security Hub integration</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 10: Datadog Integration -->
+        <div class="slide">
+            <h2>📊 Datadog Monitoring Integration</h2>
+            
+            <h3>1. Install Datadog Agent using Helm:</h3>
+            <div class="code-block">
+              <code class="language-bash"> 
+                <pre>
+# Add Datadog Helm repository
+helm repo add datadog https://helm.datadoghq.com
+helm repo update
+
+# Create Datadog namespace
+kubectl create namespace datadog
+
+# Create secret for Datadog API key
+kubectl create secret generic datadog-secret --from-literal api-key=YOUR_DATADOG_API_KEY -n datadog
+
+# Install Datadog Agent with comprehensive monitoring
+helm install datadog-agent datadog/datadog \
+  --namespace datadog \
+  --set datadog.site='datadoghq.com' \
+  --set datadog.apiKeyExistingSecret='datadog-secret' \
+  --set datadog.logs.enabled=true \
+  --set datadog.logs.containerCollectAll=true \
+  --set datadog.apm.enabled=true \
+  --set datadog.processAgent.enabled=true \
+  --set datadog.systemProbe.enableTCPQueueLength=true \
+  --set datadog.systemProbe.enableOOMKill=true \
+  --set datadog.networkMonitoring.enabled=true \
+  --set clusterAgent.enabled=true \
+  --set clusterAgent.metricsProvider.enabled=true \
+  --set clusterAgent.admissionController.enabled=true \
+  --set clusterAgent.admissionController.mutateUnlabelled=true
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Advanced Datadog Configuration:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# values.yaml for Datadog Helm chart
+datadog:
+  site: "datadoghq.com"
+  apiKeyExistingSecret: "datadog-secret"
+  
+  # Logging configuration
+  logs:
+    enabled: true
+    containerCollectAll: true
+    containerExcludeByLogs:
+      - "image:.*fluent.*"
+      - "image:.*telegraf.*"
+    
+  # APM and tracing
+  apm:
+    enabled: true
+    port: 8126
+    useHostPort: true
+    
+  # Process monitoring
+  processAgent:
+    enabled: true
+    processCollection: true
+    
+  # Network monitoring
+  networkMonitoring:
+    enabled: true
+    
+  # Custom metrics
+  confd:
+    redis.yaml: |-
+      ad_identifiers:
+        - redis
+      init_config:
+      instances:
+        - host: "%%host%%"
+          port: "%%port%%"
+    
+    postgres.yaml: |-
+      ad_identifiers:
+        - postgres
+      init_config:
+      instances:
+        - host: "%%host%%"
+          port: "%%port%%"
+          username: datadog
+          password: "%%env_POSTGRES_PASSWORD%%"
+
+# Cluster Agent configuration
+clusterAgent:
+  enabled: true
+  replicas: 2
+  
+  # External metrics for HPA
+  metricsProvider:
+    enabled: true
+    useDatadogMetrics: true
+    
+  # Admission controller for automatic instrumentation
+  admissionController:
+    enabled: true
+    mutateUnlabelled: true
+    
+agents:
+  # Resource limits
+  containers:
+    agent:
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 200m
+          memory: 256Mi
+    
+    processAgent:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 200Mi
+        limits:
+          cpu: 100m
+          memory: 200Mi
+    
+    traceAgent:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 200Mi
+        limits:
+          cpu: 100m
+          memory: 200Mi
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 11: Datadog Metrics Collection -->
+        <div class="slide">
+            <h2>📈 Datadog P1 Metrics Collection</h2>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>🚀 Application Metrics</h4>
+                    <ul style="text-align: left; font-size: 0.9em;">
+                        <li>Request Rate (RPS)</li>
+                        <li>Response Time (P50, P95, P99)</li>
+                        <li>Error Rate (%)</li>
+                        <li>Throughput</li>
+                    </ul>
+                </div>
+                
+                <div class="metric-card">
+                    <h4>🏗️ Infrastructure Metrics</h4>
+                    <ul style="text-align: left; font-size: 0.9em;">
+                        <li>CPU Utilization (%)</li>
+                        <li>Memory Usage (MB/GB)</li>
+                        <li>Disk I/O (IOPS)</li>
+                        <li>Network Traffic (MB/s)</li>
+                    </ul>
+                </div>
+                
+                <div class="metric-card">
+                    <h4>☸️ Kubernetes Metrics</h4>
+                    <ul style="text-align: left; font-size: 0.9em;">
+                        <li>Pod Status & Restarts</li>
+                        <li>Node Health & Capacity</li>
+                        <li>Service Discovery</li>
+                        <li>Resource Quotas</li>
+                    </ul>
+                </div>
+                
+                <div class="metric-card">
+                    <h4>🔐 Security Metrics</h4>
+                    <ul style="text-align: left; font-size: 0.9em;">
+                        <li>Failed Authentication</li>
+                        <li>RBAC Violations</li>
+                        <li>Network Policy Blocks</li>
+                        <li>Container Vulnerabilities</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Custom Metrics Collection Configuration:</h3>
+            <div class="code-block">
+              <code class="language-python"> 
+                <pre>
+# Configure custom metrics in application
+
+# Python application example
+import ddtrace
+from ddtrace import patch_all
+
+# Patch all supported libraries
+patch_all()
+
+# Initialize tracer
+ddtrace.config.service = 'sample-backend'
+ddtrace.config.env = 'production'
+ddtrace.config.version = '2.1.0'
+
+# Custom metrics
+from datadog import initialize, statsd
+
+initialize(
+    api_key='YOUR_API_KEY',
+    app_key='YOUR_APP_KEY'
+)
+
+# Send custom metrics
+statsd.increment('myapp.page_views')
+statsd.histogram('myapp.response_time', response_time)
+statsd.gauge('myapp.queue_size', queue_size)
+
+                </pre>
+              </code>
+            </div>
+
+            <h3>Kubernetes Annotations for Auto-Discovery:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Add annotations to deployment for automatic metric collection
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-app
+  namespace: sample-app
+spec:
+  template:
+    metadata:
+      annotations:
+        ad.datadoghq.com/redis.check_names: '["redisdb"]'
+        ad.datadoghq.com/redis.init_configs: '[{}]'
+        ad.datadoghq.com/redis.instances: '[{"host": "%%host%%", "port": "6379", "password": "%%env_REDIS_PASSWORD%%"}]'
+        ad.datadoghq.com/redis.logs: '[{"source": "redis", "service": "redis"}]'
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+              </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 12: Cost Analysis -->
+        <div class="slide">
+            <h2>💰 AWS EKS Cost Analysis: EC2 vs Fargate</h2>
+            
+            <h3>EKS Control Plane Pricing (Fixed):</h3>
+            <table class="cost-table">
+                <tr>
+                    <th>Component</th>
+                    <th>Price</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>EKS Control Plane</td>
+                    <td>$0.10/hour</td>
+                    <td>$73/month per cluster</td>
+                </tr>
+            </table>
+
+            <h3>EC2 Worker Nodes Cost Analysis:</h3>
+            <table class="cost-table">
+                <tr>
+                    <th>Instance Type</th>
+                    <th>vCPUs</th>
+                    <th>Memory (GB)</th>
+                    <th>On-Demand ($/hour)</th>
+                    <th>Monthly Cost</th>
+                    <th>Reserved (1yr)</th>
+                </tr>
+                <tr>
+                    <td>t3.medium</td>
+                    <td>2</td>
+                    <td>4</td>
+                    <td>$0.0416</td>
+                    <td>$30.36</td>
+                    <td>$19.71</td>
+                </tr>
+                <tr>
+                    <td>t3.large</td>
+                    <td>2</td>
+                    <td>8</td>
+                    <td>$0.0832</td>
+                    <td>$60.74</td>
+                    <td>$39.42</td>
+                </tr>
+                <tr>
+                    <td>m5.large</td>
+                    <td>2</td>
+                    <td>8</td>
+                    <td>$0.096</td>
+                    <td>$70.08</td>
+                    <td>$45.47</td>
+                </tr>
+                <tr>
+                    <td>m5.xlarge</td>
+                    <td>4</td>
+                    <td>16</td>
+                    <td>$0.192</td>
+                    <td>$140.16</td>
+                    <td>$90.94</td>
+                </tr>
+                <tr>
+                    <td>m5.2xlarge</td>
+                    <td>8</td>
+                    <td>32</td>
+                    <td>$0.384</td>
+                    <td>$280.32</td>
+                    <td>$181.87</td>
+                </tr>
+                <tr>
+                    <td>c5.large</td>
+                    <td>2</td>
+                    <td>4</td>
+                    <td>$0.085</td>
+                    <td>$62.05</td>
+                    <td>$40.29</td>
+                </tr>
+            </table>
+
+            <h3>Fargate Pricing Model:</h3>
+            <table class="cost-table">
+                <tr>
+                    <th>Resource</th>
+                    <th>Price per hour</th>
+                    <th>Notes</th>
+                </tr>
+                <tr>
+                    <td>vCPU</td>
+                    <td>$0.04048/vCPU</td>
+                    <td>Minimum 0.25 vCPU</td>
+                </tr>
+                <tr>
+                    <td>Memory</td>
+                    <td>$0.004445/GB</td>
+                    <td>Minimum 0.5 GB</td>
+                </tr>
+            </table>
+
+            <h3>Cost Comparison Scenarios:</h3>
+            <div class="code-block">
+              <code class="language-text"> 
+                <pre>
+# Scenario 1: Small Application (0.5 vCPU, 1GB RAM)
+Fargate Cost per hour: (0.5 * $0.04048) + (1 * $0.004445) = $0.024685
+Fargate Monthly Cost: $0.024685 * 24 * 30 = $17.77
+
+# Scenario 2: Medium Application (2 vCPU, 4GB RAM)  
+Fargate Cost per hour: (2 * $0.04048) + (4 * $0.004445) = $0.09874
+Fargate Monthly Cost: $0.09874 * 24 * 30 = $71.09
+
+# EC2 t3.medium (2 vCPU, 4GB): $30.36/month
+# But you can run multiple pods on same instance
+
+# Scenario 3: High-CPU Application (4 vCPU, 8GB RAM)
+Fargate Cost per hour: (4 * $0.04048) + (8 * $0.004445) = $0.19748
+Fargate Monthly Cost: $0.19748 * 24 * 30 = $142.19
+
+# EC2 m5.xlarge (4 vCPU, 16GB): $140.16/month
+# Better value with higher memory and multi-pod capacity
+
+
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 13: Cost Optimization -->
+        <div class="slide">
+            <h2>💡 Cost Optimization Strategies</h2>
+            
+            <h3>1. Right-Sizing and Auto-Scaling:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Cluster Autoscaler configuration for cost optimization
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cluster-autoscaler
+  namespace: kube-system
+spec:
+  template:
+    spec:
+      containers:
+      - image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.0
+        name: cluster-autoscaler
+        command:
+        - ./cluster-autoscaler
+        - --v=4
+        - --stderrthreshold=info
+        - --cloud-provider=aws
+        - --skip-nodes-with-local-storage=false
+        - --expander=least-waste
+        - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/production-eks-cluster
+        - --balance-similar-node-groups
+        - --scale-down-enabled=true
+        - --scale-down-delay-after-add=10m
+        - --scale-down-unneeded-time=10m
+        - --scale-down-delay-after-delete=10s
+        - --scale-down-delay-after-failure=3m
+        - --scale-down-utilization-threshold=0.5
+
+# Vertical Pod Autoscaler for right-sizing
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: frontend-vpa
+  namespace: sample-app
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: frontend
+      maxAllowed:
+        cpu: 1
+        memory: 2Gi
+      minAllowed:
+        cpu: 100m
+        memory: 128Mi
+
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Spot Instances Integration:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Mixed instance node group with Spot instances
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+managedNodeGroups:
+- name: spot-workers
+  instanceTypes: ["m5.large", "m5.xlarge", "m4.large", "m4.xlarge"]
+  spot: true
+  minSize: 1
+  maxSize: 10
+  desiredCapacity: 3
+  volumeSize: 100
+  ssh:
+    allow: true
+    publicKeyName: your-key
+  labels:
+    node-type: spot-worker
+    lifecycle: Ec2Spot
+  taints:
+  - key: spotInstance
+    value: "true"
+    effect: NoSchedule
+  tags:
+    nodegroup-type: spot-workers
+
+# Deployment with spot instance toleration
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: batch-processor
+  namespace: sample-app
+spec:
+  replicas: 3
+  template:
+    spec:
+      tolerations:
+      - key: spotInstance
+        operator: Equal
+        value: "true"
+        effect: NoSchedule
+      nodeSelector:
+        lifecycle: Ec2Spot
+      containers:
+      - name: processor
+        image: batch-processor:latest
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+
+                </pre>
+              </code>
+            </div>
+
+            <h3>3. Cost Monitoring and Alerts:</h3>
+            <div class="code-block">
+              <code class="language-bash"> 
+                <pre>
+
+# Install KubeCost for cost visibility
+helm repo add kubecost https://kubecost.github.io/cost-analyzer/
+helm install kubecost kubecost/cost-analyzer \
+  --namespace kubecost \
+  --create-namespace \
+  --set kubecostToken="YOUR_TOKEN" \
+  --set prometheus.server.persistentVolume.size=32Gi \
+  --set prometheus.alertmanager.persistentVolume.size=8Gi
+
+# CloudWatch billing alert
+aws cloudwatch put-metric-alarm \
+  --alarm-name "EKS-Monthly-Cost-Alert" \
+  --alarm-description "Alert when EKS monthly cost exceeds $500" \
+  --metric-name EstimatedCharges \
+  --namespace AWS/Billing \
+  --statistic Maximum \
+  --period 86400 \
+  --threshold 500 \
+  --comparison-operator GreaterThanThreshold \
+  --dimensions Name=Currency,Value=USD \
+  --evaluation-periods 1 \
+  --alarm-actions arn:aws:sns:us-east-1:123456789012:billing-alerts
+                </pre>
+              </code>
+            </div>
+
+            <div class="highlight-box">
+                <h3>Cost Optimization Best Practices:</h3>
+                <ul>
+                    <li><strong>Use Reserved Instances:</strong> 30-60% savings for predictable workloads</li>
+                    <li><strong>Implement Pod Disruption Budgets:</strong> Safe spot instance termination</li>
+                    <li><strong>Resource Limits:</strong> Prevent resource waste and noisy neighbors</li>
+                    <li><strong>Fargate for Batch Jobs:</strong> Pay only for actual compute time</li>
+                    <li><strong>Cluster Rightsizing:</strong> Regular review and optimization</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 14: Best Practices Summary -->
+        <div class="slide">
+            <h2>🎯 EKS Management Best Practices</h2>
+            
+            <h3>1. Operational Excellence:</h3>
+            <div class="highlight-box">
+                <h4>Infrastructure as Code:</h4>
+                <ul>
+                    <li><strong>Version Control:</strong> Store all configurations in Git repositories</li>
+                    <li><strong>GitOps Workflow:</strong> Use ArgoCD or Flux for automated deployments</li>
+                    <li><strong>Environment Parity:</strong> Consistent dev, staging, and production setups</li>
+                    <li><strong>Backup Strategy:</strong> Regular ETCD backups and disaster recovery plans</li>
+                </ul>
+            </div>
+
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Example ArgoCD Application manifest
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+---
+
+# GitOps with ArgoCD
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: sample-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/your-org/k8s-manifests
+    targetRevision: main
+    path: sample-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: sample-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Security Best Practices:</h3>
+            <div class="warning-box">
+                <h4>Security Checklist:</h4>
+                <ul>
+                    <li><strong>Regular Updates:</strong> Keep EKS, nodes, and add-ons updated</li>
+                    <li><strong>Image Scanning:</strong> Scan container images for vulnerabilities</li>
+                    <li><strong>Least Privilege:</strong> Implement RBAC and IAM policies</li>
+                    <li><strong>Network Segmentation:</strong> Use security groups and network policies</li>
+                    <li><strong>Secrets Management:</strong> Never store secrets in code or configs</li>
+                    <li><strong>Audit Logging:</strong> Enable and monitor all API server activities</li>
+                </ul>
+            </div>
+
+            <h3>3. Monitoring and Observability:</h3>
+            <div class="code-block">
+              <code class="language-bash"> 
+                <pre>
+# Complete observability stack installation
+# Prometheus + Grafana + AlertManager
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --set prometheus.prometheusSpec.retention=30d \
+  --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=50Gi \
+  --set grafana.persistence.enabled=true \
+  --set grafana.persistence.size=10Gi
+
+# Install Jaeger for distributed tracing
+helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
+helm install jaeger jaegertracing/jaeger \
+  --namespace observability \
+  --create-namespace \
+  --set provisionDataStore.cassandra=false \
+  --set provisionDataStore.elasticsearch=true \
+  --set storage.type=elasticsearch
+# Install Fluentd for log aggregation
+helm repo add fluent https://fluent.github.io/helm-charts
+helm install fluentd fluent/fluentd \
+  --namespace logging \
+  --create-namespace \
+  --set fluentd.configMap.enabled=true \
+  --set fluentd.configMap.data.fluent.conf='<source>
+  @type tail
+  path /var/log/containers/*.log
+  pos_file /var/log/fluentd-containers.log.pos
+  tag kubernetes.*
+  format json
+</source>
+<match kubernetes.**>
+  @type elasticsearch
+  host elasticsearch.logging.svc.cluster.local
+  port 9200
+  logstash_format true
+  flush_interval 5s
+</match>'
+                </pre>
+              </code>
+            </div>
+
+            <h3>4. Performance Optimization:</h3>
+            <div class="highlight-box">
+                <h4>Performance Best Practices:</h4>
+                <ul>
+                    <li><strong>Resource Requests/Limits:</strong> Set appropriate values for all containers</li>
+                    <li><strong>Quality of Service:</strong> Use Guaranteed QoS for critical workloads</li>
+                    <li><strong>Horizontal Pod Autoscaler:</strong> Scale based on custom metrics</li>
+                    <li><strong>Node Affinity:</strong> Place pods on optimal nodes</li>
+                    <li><strong>Pod Disruption Budgets:</strong> Ensure availability during maintenance</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 15: Kubernetes Objects Management for Pro Administrators -->
+        <div class="slide">
+            <h2>☸️ Pro-Level Kubernetes Objects Management</h2>
+            
+            <h3>1. Advanced Resource Management:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# ResourceQuota for namespace-level resource control
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: production-quota
+  namespace: production
+spec:
+  hard:
+    requests.cpu: "100"
+    requests.memory: 200Gi
+    limits.cpu: "200"
+    limits.memory: 400Gi
+    persistentvolumeclaims: "50"
+    pods: "100"
+    services: "20"
+    secrets: "50"
+    configmaps: "50"
+    count/deployments.apps: "20"
+    count/jobs.batch: "10"
+---
+# LimitRange for pod-level defaults and constraints
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: production-limits
+  namespace: production
+spec:
+  limits:
+  - type: Container
+    default:
+      cpu: "500m"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "100m"
+      memory: "128Mi"
+    max:
+      cpu: "2"
+      memory: "4Gi"
+    min:
+      cpu: "50m"
+      memory: "64Mi"
+  - type: PersistentVolumeClaim
+    max:
+      storage: "100Gi"
+    min:
+      storage: "1Gi"
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Advanced Scheduling and Node Management:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Node Affinity and Taints for optimal scheduling
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: critical-service
+  namespace: production
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: critical-service
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: critical-service
+        tier: frontend
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-type
+                operator: In
+                values:
+                - high-performance
+      tolerations:
+      - key: "critical"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      containers:
+      - name: frontend
+        image: critical-service:latest
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+
+# PriorityClass for critical workloads
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: critical-priority
+value: 1000000
+globalDefault: false
+description: "Critical system workloads"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: high-priority
+value: 100000
+description: "High priority application workloads"
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: low-priority
+value: 1000
+description: "Low priority batch workloads"
+
+# Advanced Pod Disruption Budget
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: critical-app-pdb
+  namespace: production
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: critical-service
+      tier: frontend
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  maxUnavailable: 1
+                </pre>
+              </code>
+            </div>
+
+            <h3>3. Custom Resource Definitions (CRDs) for Platform Management:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Application CRD for platform abstraction
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: applications.platform.company.com
+spec:
+  group: platform.company.com
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              replicas:
+                type: integer
+                minimum: 1
+                maximum: 100
+              image:
+                type: string
+              environment:
+                type: string
+                enum: ["dev", "staging", "production"]
+              resources:
+                type: object
+                properties:
+                  requests:
+                    type: object
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+                  limits:
+                    type: object
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
+              monitoring:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                  scrapeInterval:
+                    type: string
+              autoscaling:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                  minReplicas:
+                    type: integer
+                  maxReplicas:
+                    type: integer
+                  targetCPU:
+                    type: integer
+                  targetMemory:
+                    type: integer
+          status:
+            type: object
+            properties:
+              phase:
+                type: string
+              conditions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                    status:
+                      type: string
+                    reason:
+                      type: string
+                    message:
+                      type: string
+  scope: Namespaced
+  names:
+    plural: applications
+    singular: application
+    kind: Application
+    shortNames:
+    - app
+---
+# Example Application CRD instance
+apiVersion: platform.company.com/v1
+kind: Application
+metadata:
+  name: sample-app
+  namespace: production
+spec:
+  replicas: 3
+  image: company/sample-app:latest
+  environment: production
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+  monitoring:
+    enabled: true
+    scrapeInterval: "30s"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPU: 80
+    targetMemory: 70
+status:
+  phase: Running
+  conditions:
+  - type: Available
+    status: "True"
+    reason: AllPodsReady
+    message: All pods are running and ready
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 16: GitOps with ArgoCD and Workflows -->
+        <div class="slide">
+            <h2>🔄 Enterprise GitOps with ArgoCD & Argo Workflows</h2>
+            
+            <h3>1. ArgoCD Multi-Cluster Setup:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# ArgoCD HA installation for production
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+---
+# ArgoCD ConfigMap for multi-cluster
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argocd-cm
+  namespace: argocd
+data:
+  url: https://argocd.company.com
+  oidc.config: |
+    name: OIDC
+    issuer: https://company.okta.com
+    clientId: argocd-oidc
+    clientSecret: $oidc.clientSecret
+    requestedScopes: ["openid", "profile", "email", "groups"]
+    requestedIDTokenClaims: {"groups": {"essential": true}}
+  policy.default: role:readonly
+  policy.csv: |
+    p, role:admin, applications, *, */*, allow
+    p, role:admin, clusters, *, *, allow
+    p, role:admin, repositories, *, *, allow
+    g, argocd-admins, role:admin
+    g, platform-team, role:admin
+  
+  # Multi-cluster configuration
+  cluster.config: |
+    clusters:
+      - name: dev-cluster
+        server: https://dev-k8s-api.company.com
+        config:
+          awsRoleArn: arn:aws:iam::DEV_ACCOUNT:role/ArgoCD-Dev-Role
+      - name: staging-cluster
+        server: https://staging-k8s-api.company.com
+        config:
+          awsRoleArn: arn:aws:iam::STAGING_ACCOUNT:role/ArgoCD-Staging-Role
+      - name: prod-cluster
+        server: https://prod-k8s-api.company.com
+        config:
+          awsRoleArn: arn:aws:iam::PROD_ACCOUNT:role/ArgoCD-Prod-Role
+
+# ApplicationSet for multi-environment deployment
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: microservices-appset
+  namespace: argocd
+spec:
+  generators:
+  - clusters:
+      selector:
+        matchLabels:
+          environment: production
+  - git:
+      repoURL: https://github.com/company/k8s-manifests
+      revision: HEAD
+      directories:
+      - path: applications/*
+  template:
+    metadata:
+      name: '{{path.basename}}-{{name}}'
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/company/k8s-manifests
+        targetRevision: '{{metadata.labels.branch}}'
+        path: '{{path}}/{{metadata.labels.environment}}'
+        helm:
+          valueFiles:
+          - values-{{metadata.labels.environment}}.yaml
+      destination:
+        server: '{{server}}'
+        namespace: '{{path.basename}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - PrunePropagationPolicy=foreground
+        - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
+
+
+
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Argo Workflows for CI/CD Pipelines:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Argo Workflows installation with RBAC
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: argo-workflow
+  namespace: argo-workflows
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argo-workflow-executor
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["persistentvolumeclaims"]
+  verbs: ["get", "list", "create", "delete"]
+- apiGroups: ["argoproj.io"]
+  resources: ["workflows", "workflows/finalizers"]
+  verbs: ["get", "list", "watch", "update", "patch", "delete", "create"]
+
+# Multi-stage CI/CD Workflow Template
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: ci-cd-pipeline
+  namespace: argo-workflows
+spec:
+  serviceAccountName: argo-workflow
+  entrypoint: ci-cd-main
+  volumeClaimTemplates:
+  - metadata:
+      name: workspace
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+  
+  templates:
+  - name: ci-cd-main
+    dag:
+      tasks:
+      - name: git-clone
+        template: git-clone
+      - name: security-scan
+        template: security-scan
+        dependencies: [git-clone]
+      - name: unit-tests
+        template: unit-tests
+        dependencies: [git-clone]
+      - name: build-image
+        template: build-image
+        dependencies: [security-scan, unit-tests]
+      - name: integration-tests
+        template: integration-tests
+        dependencies: [build-image]
+      - name: deploy-dev
+        template: deploy-environment
+        arguments:
+          parameters:
+          - name: environment
+            value: "dev"
+        dependencies: [integration-tests]
+      - name: e2e-tests
+        template: e2e-tests
+        dependencies: [deploy-dev]
+      - name: deploy-staging
+        template: deploy-environment
+        arguments:
+          parameters:
+          - name: environment
+            value: "staging"
+        dependencies: [e2e-tests]
+      - name: performance-tests
+        template: performance-tests
+        dependencies: [deploy-staging]
+      - name: deploy-prod-approval
+        template: approval-gate
+        dependencies: [performance-tests]
+      - name: deploy-production
+        template: deploy-environment
+        arguments:
+          parameters:
+          - name: environment
+            value: "production"
+        dependencies: [deploy-prod-approval]
+
+  - name: git-clone
+    container:
+      image: alpine/git:latest
+      command: [sh, -c]
+      args: ["git clone {{workflow.parameters.repo-url}} /workspace && cd /workspace && git checkout {{workflow.parameters.revision}}"]
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+
+  - name: security-scan
+    container:
+      image: aquasec/trivy:latest
+      command: [sh, -c]
+      args: ["trivy fs --security-checks vuln,config /workspace --format json --output /workspace/security-report.json"]
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+
+  - name: build-image
+    container:
+      image: gcr.io/kaniko-project/executor:latest
+      args:
+      - --context=/workspace
+      - --dockerfile=/workspace/Dockerfile
+      - --destination={{workflow.parameters.image-repo}}:{{workflow.parameters.image-tag}}
+      - --cache=true
+      - --cache-ttl=24h
+      volumeMounts:
+      - name: workspace
+        mountPath: /workspace
+      - name: docker-config
+        mountPath: /kaniko/.docker
+
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 17: Terraform Multi-Environment Management -->
+        <div class="slide">
+            <h2>🏗️ Terraform Multi-Environment Infrastructure</h2>
+            
+            <h3>1. Terraform Workspace Structure:</h3>
+            <div class="code-block">
+              <code class="language-text"> 
+                <pre>
+# Directory structure for multi-environment Terraform
+infrastructure/
+├── environments/
+│   ├── dev/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── terraform.tfvars
+│   │   └── backend.tf
+│   ├── staging/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── terraform.tfvars
+│   │   └── backend.tf
+│   └── production/
+│       ├── main.tf
+│       ├── variables.tf
+│       ├── terraform.tfvars
+│       └── backend.tf
+├── modules/
+│   ├── eks-cluster/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   ├── outputs.tf
+│   │   └── versions.tf
+│   ├── vpc/
+│   ├── rds/
+│   ├── elasticache/
+│   └── monitoring/
+└── shared/
+    ├── policies/
+    ├── roles/
+    └── common-tags.tf
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Environment-Specific Configurations:</h3>
+            <div class="code-block">
+              <code class="language-hcl"> 
+                <pre>
+
+
+# environments/production/main.tf
+terraform {
+  required_version = ">= 1.5"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 2.23"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 2.11"
+    }
+  }
+  
+  backend "s3" {
+    bucket         = "company-terraform-state-prod"
+    key            = "eks/production/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-state-lock-prod"
+  }
+}
+
+# Provider configurations
+provider "aws" {
+  region = var.aws_region
+  
+  assume_role {
+    role_arn = "arn:aws:iam::${var.prod_account_id}:role/TerraformExecutionRole"
+  }
+  
+  default_tags {
+    tags = local.common_tags
+  }
+}
+
+# Local values for environment-specific configurations
+locals {
+  environment = "production"
+  cluster_name = "production-eks-${var.cluster_version}"
+  
+  common_tags = {
+    Environment   = local.environment
+    ManagedBy     = "Terraform"
+    Project       = var.project_name
+    Owner         = var.team_name
+    CostCenter    = var.cost_center
+    Compliance    = "SOC2-PCI"
+    Backup        = "Required"
+    Monitoring    = "Enhanced"
+  }
+  
+  # Production-specific scaling parameters
+  cluster_config = {
+    min_nodes     = 10
+    max_nodes     = 500
+    desired_nodes = 20
+    instance_types = ["m5.2xlarge", "m5.4xlarge", "c5.2xlarge"]
+    capacity_type  = "ON_DEMAND"
+  }
+  
+  spot_config = {
+    min_nodes     = 5
+    max_nodes     = 1000
+    desired_nodes = 50
+    instance_types = ["m5.large", "m5.xlarge", "m4.large", "m4.xlarge"]
+    capacity_type  = "SPOT"
+  }
+}
+
+# VPC Module
+module "vpc" {
+  source = "../../modules/vpc"
+  
+  environment    = local.environment
+  cluster_name   = local.cluster_name
+  vpc_cidr       = var.vpc_cidr
+  azs           = var.availability_zones
+  
+  # Production requires more subnets for scalability
+  private_subnets = [
+    "10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24",
+    "10.0.11.0/24", "10.0.12.0/24", "10.0.13.0/24"
+  ]
+  public_subnets = [
+    "10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"
+  ]
+  database_subnets = [
+    "10.0.201.0/24", "10.0.202.0/24", "10.0.203.0/24"
+  ]
+  
+  enable_nat_gateway     = true
+  enable_vpn_gateway     = false
+  enable_dns_hostnames   = true
+  enable_dns_support     = true
+  
+  # VPC Flow Logs for security
+  enable_flow_log                      = true
+  flow_log_destination_type           = "cloud-watch-logs"
+  flow_log_log_format                 = "${version} ${account-id} ${interface-id} ${srcaddr} ${dstaddr} ${srcport} ${dstport} ${protocol} ${packets} ${bytes} ${windowstart} ${windowend} ${action} ${flowlogstatus}"
+  
+  tags = local.common_tags
+}
+
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Scalable EKS Cluster Module:</h3>
+            <div class="code-block">
+              <code class="language-hcl"> 
+                <pre>
+# modules/eks-cluster/main.tf - Production-grade EKS
+resource "aws_eks_cluster" "main" {
+  name     = var.cluster_name
+  role_arn = aws_iam_role.cluster_role.arn
+  version  = var.kubernetes_version
+  
+  vpc_config {
+    subnet_ids              = var.subnet_ids
+    endpoint_private_access = true
+    endpoint_public_access  = true
+    public_access_cidrs     = var.public_access_cidrs
+    security_group_ids      = [aws_security_group.cluster_sg.id]
+  }
+  
+  # Enhanced logging for production
+  enabled_cluster_log_types = [
+    "api", "audit", "authenticator", 
+    "controllerManager", "scheduler"
+  ]
+  
+  encryption_config {
+    provider {
+      key_arn = aws_kms_key.eks_encryption.arn
+    }
+    resources = ["secrets"]
+  }
+  
+  # Production clusters need enhanced monitoring
+  kubernetes_network_config {
+    service_ipv4_cidr = var.service_ipv4_cidr
+    ip_family         = "ipv4"
+  }
+  
+  depends_on = [
+    aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.cluster_AmazonEKSVPCResourceController,
+    aws_cloudwatch_log_group.cluster_logs,
+  ]
+  
+  tags = merge(var.tags, {
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+  })
+}
+
+# Multiple node groups for different workload types
+resource "aws_eks_node_group" "system" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.cluster_name}-system"
+  node_role_arn   = aws_iam_role.node_role.arn
+  subnet_ids      = var.private_subnet_ids
+  
+  # System workloads node group configuration
+  capacity_type  = "ON_DEMAND"
+  instance_types = ["m5.large"]
+  
+  scaling_config {
+    desired_size = 3
+    max_size     = 10
+    min_size     = 3
+  }
+  
+  update_config {
+    max_unavailable = 1
+  }
+  
+  # Taints for system workloads
+  taint {
+    key    = "CriticalAddonsOnly"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
+  
+  labels = {
+    "node-type"    = "system"
+    "workload"     = "system-critical"
+    "environment"  = var.environment
+  }
+  
+  tags = merge(var.tags, {
+    "kubernetes.io/cluster/${var.cluster_name}" = "owned"
+    "k8s.io/cluster-autoscaler/enabled"         = "true"
+    "k8s.io/cluster-autoscaler/${var.cluster_name}" = "owned"
+  })
+}
+
+resource "aws_eks_node_group" "general_purpose" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.cluster_name}-general"
+  node_role_arn   = aws_iam_role.node_role.arn
+  subnet_ids      = var.private_subnet_ids
+  
+  capacity_type  = "ON_DEMAND"
+  instance_types = var.general_instance_types
+  
+  scaling_config {
+    desired_size = var.general_desired_size
+    max_size     = var.general_max_size
+    min_size     = var.general_min_size
+  }
+  
+  # Advanced configuration for production
+  remote_access {
+    ec2_ssh_key               = var.key_name
+    source_security_group_ids = [aws_security_group.node_sg.id]
+  }
+  
+  labels = {
+    "node-type"     = "general-purpose"
+    "workload"      = "application"
+    "environment"   = var.environment
+  }
+}
+
+resource "aws_eks_node_group" "spot" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.cluster_name}-spot"
+  node_role_arn   = aws_iam_role.node_role.arn
+  subnet_ids      = var.private_subnet_ids
+  
+  capacity_type  = "SPOT"
+  instance_types = var.spot_instance_types
+  
+  scaling_config {
+    desired_size = var.spot_desired_size
+    max_size     = var.spot_max_size
+    min_size     = var.spot_min_size
+  }
+  
+  # Spot instance specific taints
+  taint {
+    key    = "spotInstance"
+    value  = "true"
+    effect = "NO_SCHEDULE"
+  }
+  
+  labels = {
+    "node-type"     = "spot"
+    "workload"      = "batch-processing"
+    "lifecycle"     = "Ec2Spot"
+    "environment"   = var.environment
+  }
+}
+  
+                </pre>
+              </code>
+            </div>
+        </div>
+
+        <!-- Slide 18: Mega-Scale Infrastructure Patterns -->
+        <div class="slide">
+            <h2>🌐 Mega-Scale Infrastructure: 1000+ Clusters, 10M+ Pods</h2>
+            
+            <h3>1. Cluster Federation and Multi-Region Architecture:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Cluster Federation using Admiral and Skupper
+# Regional cluster distribution for global scale
+regions:
+  - name: us-east-1
+    clusters: 200
+    capacity: 2M-pods
+    role: primary
+  - name: us-west-2
+    clusters: 200
+    capacity: 2M-pods
+    role: secondary
+  - name: eu-west-1
+    clusters: 150
+    capacity: 1.5M-pods
+    role: regional-hub
+  - name: ap-southeast-1
+    clusters: 150
+    capacity: 1.5M-pods
+    role: regional-hub
+  - name: edge-locations
+    clusters: 400
+    capacity: 3M-pods
+    role: edge-compute
+
+# Hierarchical cluster management
+apiVersion: config.admiral.io/v1
+kind: AdmiralConfig
+metadata:
+  name: global-mesh-config
+spec:
+  # Global traffic management for 1000+ clusters
+  dependencyNamespaceLabel: "admiral.io/env"
+  workloadSidecarUpdate: "enabled"
+  meshNetworks:
+    network1:
+      endpoints:
+      - fromRegistry: us-east-clusters
+      gateways:
+      - address: east-gateway.company.com
+        port: 15443
+    network2:
+      endpoints:
+      - fromRegistry: us-west-clusters
+      gateways:
+      - address: west-gateway.company.com
+        port: 15443
+  
+  # Auto-discovery for massive scale
+  clusterRegistries:
+  - name: us-east-registry
+    endpoint: https://east-registry.company.com
+    secretName: cluster-registry-secret
+  - name: us-west-registry
+    endpoint: https://west-registry.company.com
+    secretName: cluster-registry-secret
+
+# Cluster API for automated cluster lifecycle
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: ClusterClass
+metadata:
+  name: eks-production-template
+spec:
+  controlPlane:
+    ref:
+      apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+      kind: AWSManagedControlPlaneTemplate
+      name: production-control-plane
+  infrastructure:
+    ref:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+      kind: AWSClusterTemplate
+      name: production-cluster
+  workers:
+    machineDeployments:
+    - class: default-worker
+      template:
+        bootstrap:
+          ref:
+            apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+            kind: EKSConfigTemplate
+            name: production-worker-bootstrap
+        infrastructure:
+          ref:
+            apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+            kind: AWSMachineTemplate
+            name: production-worker-machine
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Massive Scale Networking with Cilium:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Cilium installation for massive scale
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kube-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cilium
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      k8s-app: cilium
+  template:
+    metadata:
+      labels:        
+        k8s-app: cilium
+    spec:
+      serviceAccountName: cilium
+      containers:
+      - name: cilium-agent
+        image: cilium/cilium:v1.12.0
+        args:
+        - "cilium-agent"
+        - "--config-dir=/tmp/cilium-config"
+        - "--k8s-namespace=kube-system"
+        - "--k8s-require-ipv4-pod-cidr=true"
+        - "--enable-ipv4=true"
+        - "--enable-ipv6=false"
+        - "--enable-bpf-masquerade=true"
+        - "--enable-local-redirect-policy=true"
+        - "--enable-bandwidth-manager=true"
+        - "--enable-bbr=true"
+        - "--enable-policy=true"
+        - "--policy-enforcement=default"
+        - "--enable-l7-proxy=true"
+        - "--enable-hubble=true"
+        - "--hubble-metrics-server=:9965"
+        - "--hubble-metrics=dns,drop,tcp,flow,icmp,http"
+        - "--ipam=kubernetes"
+        - "--auto-direct-node-routes=true"
+        - "--enable-local-node-route=false"
+        - "--cluster-pool-ipv4-cidr=CIDR"
+        - "--cluster-pool-ipv4-mask-size=16"
+        - "--cluster-mesh-config=true"
+        - "--cluster-id=1"
+        - "--cluster-name=production-us-east-1-cluster-001"
+        - "--enable-endpoint-health-checking=false"
+        - "--enable-health-check-nodeport=false"
+        volumeMounts:
+        - name: cilium-config
+          mountPath: /tmp/cilium-config
+      volumes:
+      - name: cilium-config
+        configMap:
+          name: cilium-config
+      - name: cilium-bpf
+        hostPath:
+
+# Cilium configuration for 10M+ pods
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cilium-config
+  namespace: kube-system
+data:
+  # Enable eBPF datapath for maximum performance
+  datapath-mode: "veth"
+  enable-bpf-masquerade: "true"
+  enable-ip-masq-agent: "false"
+  
+  # Massive scale network configuration
+  cluster-pool-ipv4-cidr: "10.0.0.0/8"
+  cluster-pool-ipv4-mask-size: "16"
+  
+  # Enable Cluster Mesh for multi-cluster networking
+  cluster-mesh-config: "true"
+  cluster-id: "1"
+  cluster-name: "production-us-east-1-cluster-001"
+  
+  # Performance optimizations for high pod density
+  enable-local-redirect-policy: "true"
+  enable-bandwidth-manager: "true"
+  enable-bbr: "true"
+  
+  # Security features at scale
+  enable-policy: "default"
+  policy-enforcement: "default"
+  enable-l7-proxy: "true"
+  
+  # Observability for massive scale
+  enable-hubble: "true"
+  hubble-metrics-server: ":9965"
+  hubble-metrics: "dns,drop,tcp,flow,icmp,http"
+  
+  # Resource optimizations
+  k8s-require-ipv4-pod-cidr: "true"
+  enable-endpoint-health-checking: "false"
+  enable-health-check-nodeport: "false"
+  
+  # IPAM configuration for scale
+  ipam: "kubernetes"
+  auto-direct-node-routes: "true"
+  enable-local-node-route: "false"
+
+# Network Policy for micro-segmentation at scale
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: global-default-deny
+spec:
+  endpointSelector: {}
+  ingress: []
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s:app: coredns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      - port: "53"
+        protocol: TCP
+
+# ClusterMesh configuration for cross-cluster communication
+apiVersion: v1
+kind: Secret
+metadata:
+  name: clustermesh-apiserver-remote-cert
+  namespace: kube-system
+data:
+  tls.crt: # Remote cluster certificate
+  tls.key: # Remote cluster key
+  ca.crt: # CA certificate
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clustermesh-config
+  namespace: kube-system
+data:
+  config.yaml: |
+    clusters:
+    - name: cluster-us-east-1-001
+      address: clustermesh-apiserver.us-east-1.company.com
+      port: 2379
+    - name: cluster-us-west-2-001
+      address: clustermesh-apiserver.us-west-2.company.com
+      port: 2379
+    - name: cluster-eu-west-1-001
+      address: clustermesh-apiserver.eu-west-1.company.com
+      port: 2379
+                </pre>
+              </code>
+            </div>
+
+            <h3>3. Control Plane Scaling and ETCD Optimization:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Control Plane scaling for 1000+ clusters
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-controller-manager-config
+  namespace: kube-system
+data:
+  # AWS EKS Controller Manager configuration
+  cluster-name: "production-cluster"
+  leader-elect: "true"
+  controllers: "*,node,replicaset,daemonset,statefulset,job,
+    cronjob,endpoint,serviceaccount,namespace,persistentvolumeclaim"
+  concurrent-gc-syncs: "10"  # Increase for massive scale
+  node-monitor-grace-period: "40s"  # Faster detection of node failures
+  node-monitor-period: "10s"  # More frequent node checks
+  pod-eviction-timeout: "30s"  # Quicker eviction for unresponsive pods
+  resource-eviction-rate: "0.1"  # Higher rate for large clusters
+  eviction-hard: "memory.available < 100Mi,nodefs.available < 10%,imagefs.available < 10%"
+  eviction-soft: "memory.available < 200Mi,nodefs.available < 20%,imagefs.available < 20%"
+  eviction-soft-grace-period: "memory.available=1m,nodefs.available=1m,imagefs.available=1m"
+  eviction-max-pod-grace-period: "30s"
+  horizontal-pod-autoscaler-sync-period: "10s"
+  horizontal-pod-autoscaler-downscale-stabilization: "30s"
+  horizontal-pod-autoscaler-upscale-stabilization: "30s"
+  horizontal-pod-autoscaler-initial-readiness-delay: "10s"
+
+# ETCD configuration for massive scale
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: etcd-config
+  namespace: kube-system
+data:
+# ETCD configuration for massive scale (AWS managed, conceptual)
+etcd_cluster_config:
+  # AWS EKS manages ETCD, but understanding the scale requirements
+  cluster_size: 5  # AWS uses 3-5 nodes for HA
+  disk_type: "io2"  # High IOPS for large clusters
+  disk_size: "500GB"  # Larger for extensive object storage
+  instance_type: "r5.2xlarge"  # Memory-optimized for large key-value stores
+  
+  # Performance tuning parameters (conceptual for AWS managed)
+  heartbeat_interval: "100ms"
+  election_timeout: "1000ms"
+  snapshot_count: 100000
+  
+  # Backup strategy for massive scale
+  backup_frequency: "6h"
+  backup_retention: "30d"
+  cross_region_backup: true
+
+  backup_storage: "s3://company-etcd-backups/production/"
+  backup_encryption: "AES256"
+  backup_compression: "gzip"
+  backup_notification: "sns://etcd-backup-notifications"
+  backup_tags: "Environment=Production,ManagedBy=Terraform,Project=Kubernetes"
+  backup_schedule: "cron(0 */6 * * ? *)"  # Every 6 hours
+  backup_lifecycle_policy: "s3://company-etcd-backups/production/lifecycle.json"
+  lifecycle_policy: |
+    {
+      "Rules": [
+        {
+          "ID": "ExpireOldBackups",
+          "Status": "Enabled",
+          "Prefix": "",
+          "Expiration": {
+            "Days": 30
+          },
+          "NoncurrentVersionExpiration": {  
+            "NoncurrentDays": 30
+          }
+        }
+      ]
+    }
+
+# API Server tuning for high load
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-apiserver-config
+  namespace: kube-system
+data:
+  # AWS EKS API server configuration (via cluster config)
+  audit-policy.yaml: |
+    apiVersion: audit.k8s.io/v1
+    kind: Policy
+    rules:
+    - level: None
+      resources:
+      - group: ""
+        resources: ["events"]
+    - level: None
+      resources:
+      - group: ""
+        resources: ["nodes", "pods", "services"]
+    - level: Metadata
+      resources:
+      - group: ""
+        resources: ["secrets", "configmaps"]
+    - level: RequestResponse
+      resources:
+      - group: ""
+        resources: ["deployments", "statefulsets", "daemonsets"]
+    - level: Request
+      resources:
+      - group: ""
+        resources: ["namespaces", "serviceaccounts"]
+    - level: RequestResponse
+      resources:
+      - group: "apps"
+        resources: ["replicasets", "jobs", "cronjobs"]
+    - level: RequestResponse
+      resources:
+      - group: "batch"
+        resources: ["jobs", "cronjobs"]
+    - level: RequestResponse
+      resources:
+      - group: "extensions"
+        resources: ["ingresses"]
+    - level: RequestResponse
+      resources:
+      - group: "networking.k8s.io"
+        resources: ["ingresses"]
+    - level: RequestResponse
+      resources:
+      - group: "rbac.authorization.k8s.io"
+        resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+    - level: RequestResponse
+      resources:
+      - group: "storage.k8s.io"
+        resources: ["storageclasses", "volumeattachments"]
+    - level: RequestResponse
+      resources:
+      - group: "apiextensions.k8s.io"
+        resources: ["customresourcedefinitions"]
+    - level: RequestResponse
+      resources:
+      - group: "admissionregistration.k8s.io"
+        resources: ["mutatingwebhookconfigurations", "validatingwebhookconfigurations"]
+    - level: RequestResponse
+      resources:
+      - group: "policy"
+        resources: ["poddisruptionbudgets"]
+    - level: RequestResponse
+      resources:
+      - group: "autoscaling"
+        resources: ["horizontalpodautoscalers"]
+    - level: RequestResponse
+      resources:
+      - group: "metrics.k8s.io"
+        resources: ["pods", "nodes"]
+   
+                </pre>
+              </code>
+            
+        </div>
+            <h3>1. Service Mesh Integration:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Install Istio service mesh
+curl -L https://istio.io/downloadIstio | sh -
+export PATH=$PWD/istio-1.19.0/bin:$PATH
+
+istioctl install --set values.defaultRevision=default
+kubectl label namespace sample-app istio-injection=enabled
+
+# Istio Gateway for traffic management
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: sample-app-gateway
+  namespace: sample-app
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - myapp.example.com
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: myapp-tls-secret
+    hosts:
+    - myapp.example.com
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: sample-app-vs
+  namespace: sample-app
+spec:
+  hosts:
+  - myapp.example.com
+  gateways:
+  - sample-app-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api
+    route:
+    - destination:
+        host: backend-service
+        port:
+          number: 80
+    fault:
+      delay:
+        percentage:
+          value: 0.1
+        fixedDelay: 5s
+  - route:
+    - destination:
+        host: frontend-service
+        port:
+          number: 80
+    corsPolicy:
+      allowOrigins:
+      - exact: "https://myapp.example.com"
+      allowMethods: "GET, POST, PUT, DELETE, OPTIONS"
+      allowHeaders:
+      - "content-type"
+      maxAge: "24h"
+      allowCredentials: true
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: sample-app-dr
+  namespace: sample-app
+spec:
+  host: myapp.example.com
+  trafficPolicy:
+    loadBalancer:
+      simple: ROUND_ROBIN
+    connectionPool:
+      tcp:
+        maxConnections: 1000
+      http:
+        maxRequestsPerConnection: 100
+    outlierDetection:
+      consecutiveErrors: 5
+      interval: 1s
+      baseEjectionTime: 30s
+    tls:
+      mode: SIMPLE
+      credentialName: myapp-tls-secret
+      minProtocolVersion: TLSV1_2
+      maxProtocolVersion: TLSV1_3
+---
+# Istio Sidecar configuration for massive scale
+apiVersion: networking.istio.io/v1alpha3
+kind: Sidecar
+metadata:
+  name: sample-app-sidecar
+  namespace: sample-app
+spec:
+  egress:
+  - hosts:
+    - "./*"
+  - hosts:
+    - "istio-system/*"
+  - hosts:
+    - "kube-system/*"
+  ingress:
+  - defaultEndpoint: " 
+                </pre>
+              </code>
+            </div>
+
+            <h3>2. Multi-Cluster Management:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# Cluster API for multi-cluster management
+# Install cluster-api components
+clusterctl init --infrastructure aws
+
+# Create workload cluster
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: workload-cluster-1
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"]
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
+    kind: AWSCluster
+    name: workload-cluster-1
+  controlPlaneRef:
+    kind: KubeadmControlPlane
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    name: workload-cluster-1-control-plane
+
+# Admiral for multi-cluster service mesh
+kubectl apply -f https://raw.githubusercontent.com/istio-ecosystem/admiral/master/install/yaml/admiral.yaml
+                </pre>
+              </code>
+            </div>
+
+            <h3>3. Edge Computing with EKS Anywhere:</h3>
+            <div class="code-block">
+              <code class="language-yaml"> 
+                <pre>
+# EKS Anywhere cluster configuration
+apiVersion: anywhere.eks.amazonaws.com/v1alpha1
+kind: Cluster
+metadata:
+  name: edge-cluster
+spec:
+  kubernetesVersion: "1.28"
+  clusterNetwork:
+    cniConfig:
+      cilium: {}
+  controlPlaneConfiguration:
+    count: 3
+    endpoint:
+      host: "10.0.1.10"
+    machineGroupRef:
+      kind: VSphereMachineConfig
+      name: edge-control-plane
+  workerNodeGroupConfigurations:
+  - count: 5
+    machineGroupRef:
+      kind: VSphereMachineConfig
+      name: edge-worker-nodes
+    name: worker-nodes
+  datacenterRef:
+    kind: VSphereDatacenterConfig
+    name: edge-datacenter
+
+                </pre>
+              </code>
+            </div>
+
+            <h3>4. Future Roadmap Considerations:</h3>
+            <div class="highlight-box">
+                <h4>Emerging Technologies:</h4>
+                <ul>
+                    <li><strong>WebAssembly (WASM):</strong> Lightweight, secure container alternatives</li>
+                    <li><strong>eBPF:</strong> Advanced networking and security capabilities</li>
+                    <li><strong>Serverless Containers:</strong> AWS Lambda for Kubernetes integration</li>
+                    <li><strong>AI/ML Workloads:</strong> GPU nodes and specialized operators</li>
+                    <li><strong>Edge Computing:</strong> EKS Anywhere and edge locations</li>
+                    <li><strong>Sustainability:</strong> Green computing and carbon optimization</li>
+                </ul>
+            </div>
+
+            <div class="warning-box">
+                <h4>Migration and Modernization:</h4>
+                <ul>
+                    <li><strong>Gradual Migration:</strong> Strangler fig pattern for legacy applications</li>
+                    <li><strong>Hybrid Cloud:</strong> Multi-cloud and on-premises integration</li>
+                    <li><strong>Compliance:</strong> SOC2, HIPAA, PCI-DSS considerations</li>
+                    <li><strong>Disaster Recovery:</strong> Cross-region and cross-cloud strategies</li>
+                </ul>
+            </div>
+
+            <div style="text-align: center; margin-top: 50px; padding: 30px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 15px; color: white;">
+                <h2>🎉 Thank You!</h2>
+                <p style="font-size: 1.2em;">Advanced AWS EKS Workshop Complete</p>
+                <p>Ready for Production-Grade Kubernetes on AWS!</p>
+                <div style="margin-top: 20px;">
+                    <p><strong>Next Steps:</strong></p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li>🔧 Implement hands-on exercises</li>
+                        <li>📊 Set up monitoring and alerting</li>
+                        <li>🔐 Apply security best practices</li>
+                        <li>💰 Optimize costs continuously</li>
+                        <li>🚀 Scale your applications confidently</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="navigation">
+        <button class="nav-btn" onclick="previousSlide()">← Previous</button>
+        <button class="nav-btn" onclick="nextSlide()">Next →</button>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        
+        document.getElementById('total-slides').textContent = totalSlides;
+        
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('current-slide').textContent = currentSlide + 1;
+        }
+        
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+        
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            } else if (e.key >= '1' && e.key <= '9') {
+                const slideNumber = parseInt(e.key) - 1;
+                if (slideNumber < totalSlides) {
+                    showSlide(slideNumber);
+                }
+            }
+        });
+        
+        // Auto-resize text for mobile
+        function adjustFontSize() {
+            const container = document.querySelector('.presentation-container');
+            const containerWidth = container.offsetWidth;
+            
+            if (containerWidth < 768) {
+                document.body.style.fontSize = '14px';
+                document.querySelectorAll('.slide').forEach(slide => {
+                    slide.style.padding = '20px 30px';
+                });
+            } else {
+                document.body.style.fontSize = '16px';
+                document.querySelectorAll('.slide').forEach(slide => {
+                    slide.style.padding = '40px 60px';
+                });
+            }
+        }
+        
+        window.addEventListener('resize', adjustFontSize);
+        adjustFontSize();
+        
+        // Progress bar
+        function updateProgress() {
+            const progress = ((currentSlide + 1) / totalSlides) * 100;
+            document.querySelector('.slide-counter').style.background = 
+                `linear-gradient(90deg, #3498db ${progress}%, rgba(52, 73, 94, 0.8) ${progress}%)`;
+        }
+        
+        // Update progress on slide change
+        const originalShowSlide = showSlide;
+        showSlide = function(n) {
+            originalShowSlide(n);
+            updateProgress();
+        };
+        
+        updateProgress();
+    </script>
+</body>
+</html>
+                    

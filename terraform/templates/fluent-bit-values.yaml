@@ -1,0 +1,50 @@
+# Fluent Bit configuration values for EKS
+serviceAccount:
+  create: true
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::${AWS_ACCOUNT_ID}:role/${cluster_name}-fluent-bit
+
+config:
+  service: |
+    [SERVICE]
+        Flush          5
+        Daemon        Off
+        Log_Level     info
+        Parsers_File  parsers.conf
+
+  inputs: |
+    [INPUT]
+        Name              tail
+        Tag               kube.*
+        Path              /var/log/containers/*.log
+        Parser            docker
+        DB                /var/log/flb_kube.db
+        Mem_Buf_Limit     5MB
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+
+  filters: |
+    [FILTER]
+        Name                kubernetes
+        Match               kube.*
+        Kube_URL           https://kubernetes.default.svc:443
+        Merge_Log          On
+        K8S-Logging.Parser On
+        K8S-Logging.Exclude On
+
+  outputs: |
+    [OUTPUT]
+        Name                cloudwatch
+        Match               kube.*
+        region             ${region}
+        log_group_name     /eks/${cluster_name}/logs
+        log_stream_prefix  ${cluster_name}-
+        auto_create_group  true
+
+  customParsers: |
+    [PARSER]
+        Name   docker
+        Format json
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L
+        Time_Keep   On
